@@ -26,6 +26,8 @@ else
       data = {}
       updatelist = []
       updatefile = os_patching_dir + '/package_updates'
+      mismatchpkgs = []
+      mismatchpinnedpackagefile = os_patching_dir + '/mismatched_version_locked_packages'
       if File.file?(updatefile)
         if (Time.now - File.mtime(updatefile)) / (24 * 3600) > 10
           warnings['update_file_time'] = 'Update file has not been updated in 10 days'
@@ -41,8 +43,18 @@ else
       else
         warnings['update_file'] = 'Update file not found, update information invalid'
       end
-      data['package_updates'] = updatelist
-      data['package_update_count'] = updatelist.count
+
+      if File.file?(mismatchpinnedpackagefile) and not File.zero?(mismatchpinnedpackagefile)
+        warnings['version_specified_but_not_locked_packages'] = []
+        mismatchfile = File.open(mismatchpinnedpackagefile, 'r').read
+        mismatchfile.each_line do |line|
+          mismatchpkgs.push line.chomp
+        end
+      end
+      warnings['version_specified_but_not_locked_packages'] = mismatchpkgs
+
+      data['package_updates'] = updatelist - mismatchpkgs
+      data['package_update_count'] = data['package_updates'].count
       data
     end
 
@@ -124,19 +136,11 @@ else
     chunk(:pinned) do
       data = {}
       pinnedpkgs = []
-      mismatchpinnedpackagefile = os_patching_dir + '/mismatched_version_locked_packages'
       pinnedpackagefile = os_patching_dir + '/os_version_locked_packages'
       if File.file?(pinnedpackagefile)
         pinnedfile = File.open(pinnedpackagefile, 'r').read.chomp
         pinnedfile.each_line do |line|
           pinnedpkgs.push line.chomp
-        end
-      end
-      if File.file?(mismatchpinnedpackagefile) and not File.zero?(mismatchpinnedpackagefile)
-        warnings['version_specified_but_not_locked_packages'] = []
-        mismatchfile = File.open(mismatchpinnedpackagefile, 'r').read
-        mismatchfile.each_line do |line|
-          warnings['version_specified_but_not_locked_packages'].push line.chomp
         end
       end
       data['pinned_packages'] = pinnedpkgs
