@@ -1,6 +1,10 @@
 {
   "input_method": "stdin",
   "parameters": {
+    "debug": {
+      "description": "Controls whether the debug output of YUM is included the task report)",
+      "type": "Optional[Boolean]"
+    },
     "yum_params": {
       "description": "Any additional parameters to include in the yum upgrade command (such as including/excluding repos)",
       "type": "Optional[String]"

@@ -512,6 +512,10 @@ if facts['values']['os']['family'] == 'RedHat'
     pkg_hash = {}
   end
 
+
+  if params['debug'] && params['debug'] == false
+    output = ""
+
   output(yum_return, reboot, security_only, 'Patching complete', pkg_hash, output, job, pinned_pkgs, starttime)
   log.info 'Patching complete'
 elsif facts['values']['os']['family'] == 'Debian'
