@@ -416,6 +416,14 @@ else
   securityflag = ''
 end
 
+
+# Should we exclude 'version_specified_but_not_locked_packages' from the update?
+# (works only on RedHat... for now)
+catalog_locked_packages = facts['values']['os_patching']['warnings']['version_specified_but_not_locked_packages']
+if !catalog_locked_packages.nil?
+  exclude_catalog_packages = catalog_locked_packages.map { |pkg| "-x #{pkg}"}.join(" ")
+end
+
 # Get pre_patching_command
 pre_patching_command = if facts['values']['os_patching']['pre_patching_command']
                          facts['values']['os_patching']['pre_patching_command']
@@ -461,7 +469,7 @@ if facts['values']['os']['family'] == 'RedHat'
   log.info 'Running yum upgrade'
   log.debug "Timeout value set to : #{timeout}"
   yum_end = ''
-  status, output = run_with_timeout("yum #{yum_params} #{securityflag} upgrade -y", timeout, 2)
+  status, output = run_with_timeout("yum #{yum_params} #{securityflag} #{exclude_catalog_packages} upgrade -y", timeout, 2)
   err(status, 'os_patching/yum', "yum upgrade returned non-zero (#{status}) : #{output}", starttime) if status != 0
 
   if facts['values']['os']['release']['major'].to_i > 5
@@ -523,6 +531,10 @@ if facts['values']['os']['family'] == 'RedHat'
     yum_return = 'Assumed successful - further details not available on RHEL5'
     job = 'Unsupported on RHEL5'
     pkg_hash = {}
+  end
+
+  if params['debug'] && params['debug'] == false
+    output = ""
   end
 
   output(yum_return, reboot, security_only, 'Patching complete', pkg_hash, output, job, pinned_pkgs, starttime)
