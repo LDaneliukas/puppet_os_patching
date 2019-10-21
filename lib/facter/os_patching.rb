@@ -93,7 +93,6 @@ else
           next if line =~ /^#|^$/
           matchdata = line.match(/^([\w ]*),(\d{,4}-\d{1,2}-\d{1,2}T\d{,2}:\d{,2}:\d{,2}\+\d{,2}:\d{,2}),(\d{,4}-\d{1,2}-\d{1,2}T\d{,2}:\d{,2}:\d{,2}[-\+]\d{,2}:\d{,2})$/)
           if matchdata
-            # rubocop:disable Metrics/BlockNesting
             arraydata[matchdata[1]] = {} unless arraydata[matchdata[1]]
             if matchdata[2] > matchdata[3]
               arraydata[matchdata[1]]['start'] = 'Start date after end date'
@@ -108,7 +107,6 @@ else
               blocked = true
               blocked_reasons.push matchdata[1]
             end
-            # rubocop:enable Metrics/BlockNesting
           else
             warnings['blackouts'] = "Invalid blackout entry : #{line}"
             blocked = true
@@ -244,6 +242,33 @@ else
                                                   else
                                                     true
                                                   end
+      end
+      data
+    end
+
+    # Should we patch if there are warnings?
+    chunk(:pre_patching_command) do
+      data = {}
+      pre_patching_command = os_patching_dir + '/pre_patching_command'
+      if File.file?(pre_patching_command) && !File.empty?(pre_patching_command)
+        command = File.open(pre_patching_command, 'r').to_a
+        line = command.last
+        matchdata = line.match(/^(.*)$/)
+        if matchdata[0]
+          if File.file?(matchdata[0])
+            if File.executable?(matchdata[0])
+              data['pre_patching_command'] = matchdata[0]
+            else
+              warnings['blackouts'] = "Pre_patching_command not executable : #{matchdata[0]}"
+              blocked = true
+              blocked_reasons.push "Pre_patching_command not executable : #{matchdata[0]}"
+            end
+          else
+            warnings['pre_patching_command'] = "Invalid pre_patching_command entry : #{matchdata[0]}.  File must exist and be a single command with no arguments"
+            blocked = true
+            blocked_reasons.push "Invalid pre_patching_command entry : #{matchdata[0]}.  File must exist and be a single command with no arguments"
+          end
+        end
       end
       data
     end
