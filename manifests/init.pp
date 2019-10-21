@@ -58,6 +58,11 @@
 # @param patch_window [String]
 #   A freeform text entry used to allocate a node to a specific patch window (Optional)
 #
+# @param pre_patching_command [Stdlib::AbsolutePath]
+#   The full path of the command to run prior to running patching.  Can be used to
+#   run customised workflows such as gracefully shutting down applications.  The entry
+#   must be a single absolute filename with no arguments or parameters.
+#
 # @param patch_cron_hour
 #   The hour(s) for the cron job to run (defaults to absent, which means '*' in cron)
 #
@@ -132,6 +137,7 @@ class os_patching (
   Enum['installed', 'absent', 'purged', 'held', 'latest'] $delta_rpm = 'installed',
   Enum['installed', 'absent', 'purged', 'held', 'latest'] $yum_plugin_security = 'installed',
   Optional[Variant[Boolean, Enum['always', 'never', 'patched', 'smart', 'default']]] $reboot_override = 'default',
+  Optional[Stdlib::Absolutepath] $pre_patching_command = undef,
   Optional[Hash] $blackout_windows   = undef,
   $patch_window                      = undef,
   $patch_cron_hour                   = absent,
@@ -209,6 +215,11 @@ class os_patching (
     default => 'absent'
   }
 
+  $pre_patching_command_ensure = ($ensure == 'present' and $pre_patching_command ) ? {
+    true    => 'file',
+    default => 'absent'
+  }
+
   $patch_window_ensure = ($ensure == 'present' and $patch_window ) ? {
     true    => 'file',
     default => 'absent'
@@ -224,9 +235,14 @@ class os_patching (
     content => $patch_window,
   }
 
+  file { "${cache_dir}/pre_patching_command":
+    ensure  => $pre_patching_command_ensure,
+    content => $pre_patching_command,
+  }
+
   file { "${cache_dir}/block_patching_on_warnings":
-    ensure  => $block_patching_ensure,
-    notify  => Exec[$fact_exec],
+    ensure => $block_patching_ensure,
+    notify => Exec[$fact_exec],
   }
 
   $reboot_override_ensure = ($ensure == 'present' and $reboot_override) ? {

@@ -125,6 +125,16 @@ If `true`, use the parameter `yum_utils` to determine how it should be manged
 
 Default value: `false`
 
+##### `block_patching_on_warnings`
+
+Data type: `Boolean`
+
+If there are warnings present in the os_patching fact, should the patching task run?
+If `true` the run will abort and take no action
+If `false` the run will continue and attempt to patch (default)
+
+Default value: `false`
+
 ##### `yum_utils`
 
 Data type: `Enum['installed', 'absent', 'purged', 'held', 'latest']`
@@ -140,6 +150,14 @@ Data type: `Boolean`
 Should `puppet fact upload` be run after any changes to the fact cache files?
 
 Default value: `true`
+
+##### `apt_autoremove`
+
+Data type: `Boolean`
+
+Should `apt-get autoremove` be run during reboot?
+
+Default value: `false`
 
 ##### `manage_delta_rpm`
 
@@ -189,6 +207,16 @@ Default value: 'default'
 Data type: `String`
 
 A freeform text entry used to allocate a node to a specific patch window (Optional)
+
+Default value: `undef`
+
+##### `pre_patching_command`
+
+Data type: `Optional[Stdlib::Absolutepath]`
+
+The full path of the command to run prior to running patching.  Can be used to
+run customised workflows such as gracefully shutting down applications.  The entry
+must be a single absolute filename with no arguments or parameters.
 
 Default value: `undef`
 

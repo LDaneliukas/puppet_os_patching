@@ -416,11 +416,32 @@ else
   securityflag = ''
 end
 
+
 # Should we exclude 'version_specified_but_not_locked_packages' from the update?
 # (works only on RedHat... for now)
 catalog_locked_packages = facts['values']['os_patching']['warnings']['version_specified_but_not_locked_packages']
 if !catalog_locked_packages.nil?
   exclude_catalog_packages = catalog_locked_packages.map { |pkg| "-x #{pkg}"}.join(" ")
+end
+
+# Get pre_patching_command
+pre_patching_command = if facts['values']['os_patching']['pre_patching_command']
+                         facts['values']['os_patching']['pre_patching_command']
+                       else
+                         ''
+                       end
+
+if File.exist?(pre_patching_command)
+  if File.executable?(pre_patching_command)
+    log.info 'Running pre_patching_command : #{pre_patching_command}'
+    _fact_out, stderr, status = Open3.capture3(pre_patching_command)
+    err(status, 'os_patching/pre_patching_command', "Pre-patching-command failed: #{stderr}", starttime) if status != 0
+    log.info 'Finished pre_patching_command : #{pre_patching_command}'
+  else
+    err(210, 'os_patching/pre_patching_command', "Pre patching command not executable #{pre_patching_command}", starttime)
+  end
+elsif pre_patching_command != ''
+  err(200, 'os_patching/pre_patching_command', "Pre patching command not found #{pre_patching_command}", starttime)
 end
 
 # There are no updates available, exit cleanly rebooting if the override flag is set
